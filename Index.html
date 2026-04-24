@@ -4,9 +4,21 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Teste Baldi</title>
+    <script>
+      (function () {
+        const THEME_KEY = 'baldi-theme';
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
+          ? storedTheme
+          : (prefersDark ? 'dark' : 'light');
+
+        document.documentElement.setAttribute('data-theme', initialTheme);
+      })();
+    </script>
     <style>
       :root {
-        --splash-bg: #f5f7e6;
+        --splash-bg: var(--app-bg);
         --app-bg: #000000;
         --text: #ffffff;
         --button-bg: #ffffff;
@@ -32,6 +44,7 @@
         font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
       }
 
+      html[data-theme="light"],
       body[data-theme="light"] {
         --app-bg: #ffffff;
         --text: #000000;
@@ -113,7 +126,7 @@
         left: var(--mask-left);
         width: var(--mask-width);
         height: var(--mask-height);
-        background: #f5f7e6;
+        background: var(--splash-bg);
         clip-path: inset(0 0 0 0);
         animation: reveal-left-to-right var(--mask-reveal-time) ease-out 160ms forwards;
       }
@@ -192,15 +205,20 @@
         const THEME_KEY = 'baldi-theme';
         const applyTheme = (theme) => {
           const nextTheme = (theme === 'light') ? 'light' : 'dark';
+          document.documentElement.setAttribute('data-theme', nextTheme);
           document.body.setAttribute('data-theme', nextTheme);
           themeToggle.textContent = (nextTheme === 'dark') ? 'Modo claro' : 'Modo escuro';
         };
 
-        const storedTheme = localStorage.getItem(THEME_KEY) || 'dark';
-        applyTheme(storedTheme);
+        const storedTheme = localStorage.getItem(THEME_KEY);
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
+          ? storedTheme
+          : (prefersDark ? 'dark' : 'light');
+        applyTheme(initialTheme);
 
         themeToggle.addEventListener('click', () => {
-          const isDark = document.body.getAttribute('data-theme') !== 'light';
+          const isDark = document.documentElement.getAttribute('data-theme') !== 'light';
           const nextTheme = isDark ? 'light' : 'dark';
           applyTheme(nextTheme);
           localStorage.setItem(THEME_KEY, nextTheme);
