@@ -8,10 +8,9 @@
       (function () {
         const THEME_KEY = 'baldi-theme';
         const storedTheme = localStorage.getItem(THEME_KEY);
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
           ? storedTheme
-          : (prefersDark ? 'dark' : 'light');
+          : 'dark';
 
         document.documentElement.setAttribute('data-theme', initialTheme);
       })();
@@ -211,10 +210,9 @@
         };
 
         const storedTheme = localStorage.getItem(THEME_KEY);
-        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
         const initialTheme = (storedTheme === 'light' || storedTheme === 'dark')
           ? storedTheme
-          : (prefersDark ? 'dark' : 'light');
+          : 'dark';
         applyTheme(initialTheme);
 
         themeToggle.addEventListener('click', () => {
