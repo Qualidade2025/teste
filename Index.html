@@ -1,0 +1,194 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Teste Baldi</title>
+    <style>
+      :root {
+        --splash-bg: #f5f7e6;
+        --app-bg: #000000;
+        --text: #ffffff;
+
+        /* Controles do quadrado (máscara) */
+        --mask-top: -11px;
+        --mask-left: 170px;
+        --mask-width: 50%;
+        --mask-height: 30%;
+
+        --mask-reveal-time: 3300ms;
+        --glow-time: 1500ms;
+      }
+
+      * { box-sizing: border-box; }
+
+      html, body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+        font-family: Inter, Segoe UI, Roboto, Arial, sans-serif;
+      }
+
+      .screen {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+      }
+
+      #splash {
+        background: var(--splash-bg);
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 520ms ease, visibility 520ms ease;
+        z-index: 10;
+      }
+
+      #splash.hide {
+        opacity: 0;
+        visibility: hidden;
+      }
+
+      .logo-wrap {
+        position: relative;
+        width: min(340px, 43vw);
+        aspect-ratio: 1068 / 475;
+      }
+
+      .logo-wrap img,
+      .logo-wrap .fallback {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+      }
+
+      .logo-wrap img {
+        object-fit: contain;
+      }
+
+      .logo-wrap .fallback {
+        display: none;
+        place-items: center;
+        color: #111;
+        font-size: clamp(38px, 8vw, 90px);
+        font-style: italic;
+        font-weight: 700;
+      }
+
+      /* Glow uniforme (sem radial) após sumir o retângulo */
+      .logo-wrap.glow img,
+      .logo-wrap.glow .fallback {
+        animation: logo-glow var(--glow-time) ease-out forwards;
+      }
+
+      @keyframes logo-glow {
+        0% {
+          filter: brightness(1) drop-shadow(0 0 0 rgba(245, 247, 230, 0));
+        }
+        45% {
+          filter: brightness(2)
+                  drop-shadow(0 0 24px rgba(245, 247, 230, 1))
+                  drop-shadow(0 0 56px rgba(245, 247, 230, 1));
+        }
+        100% {
+          filter: brightness(1) drop-shadow(0 0 0 rgba(245, 247, 230, 0));
+        }
+      }
+
+      .logo-mask {
+        position: absolute;
+        top: var(--mask-top);
+        left: var(--mask-left);
+        width: var(--mask-width);
+        height: var(--mask-height);
+        background: #f5f7e6;
+        clip-path: inset(0 0 0 0);
+        animation: reveal-left-to-right var(--mask-reveal-time) ease-out 160ms forwards;
+      }
+
+      @keyframes reveal-left-to-right {
+        0% {
+          clip-path: inset(0 0 0 0);
+        }
+        100% {
+          clip-path: inset(0 0 0 100%);
+        }
+      }
+
+      #main {
+        background: var(--app-bg);
+        color: var(--text);
+      }
+
+      #main .title {
+        margin: 0;
+        font-size: clamp(28px, 5vw, 56px);
+        font-weight: 400;
+      }
+
+      #main[data-ready="false"] { opacity: 0; }
+
+      #main[data-ready="true"] {
+        opacity: 1;
+        transition: opacity 360ms ease;
+      }
+    </style>
+  </head>
+  <body>
+    <section id="splash" class="screen" aria-label="Splash screen">
+      <div id="logoWrap" class="logo-wrap" role="img" aria-label="Logo Baldi">
+        <img
+          id="logo"
+          alt="Baldi"
+          src="https://i.ibb.co/rfcpBcX0/Logo-Baldi-Sem-Fundo-Preta.png"
+        />
+        <div id="logoFallback" class="fallback">Baldi</div>
+        <div id="logoMask" class="logo-mask" aria-hidden="true"></div>
+      </div>
+    </section>
+
+    <main id="main" class="screen" data-ready="false" aria-label="Página inicial">
+      <h1 class="title">teste</h1>
+    </main>
+
+    <script>
+      (function () {
+        const GLOW_MS = 1500;
+
+        const splash = document.getElementById('splash');
+        const main = document.getElementById('main');
+        const logo = document.getElementById('logo');
+        const logoWrap = document.getElementById('logoWrap');
+        const logoMask = document.getElementById('logoMask');
+        const fallback = document.getElementById('logoFallback');
+
+        // Fallback simples caso a imagem externa não carregue.
+        logo.addEventListener('error', () => {
+          logo.style.display = 'none';
+          fallback.style.display = 'grid';
+        });
+
+        // Sequência: máscara termina -> glow -> entra tela principal.
+        logoMask.addEventListener('animationend', () => {
+          logoWrap.classList.add('glow');
+
+          const glowTarget = (logo.style.display === 'none') ? fallback : logo;
+
+          glowTarget.addEventListener('animationend', () => {
+            main.setAttribute('data-ready', 'true');
+            splash.classList.add('hide');
+          }, { once: true });
+
+          // Segurança: se o evento não disparar por algum motivo.
+          setTimeout(() => {
+            if (!splash.classList.contains('hide')) {
+              main.setAttribute('data-ready', 'true');
+              splash.classList.add('hide');
+            }
+          }, GLOW_MS + 120);
+        }, { once: true });
+      })();
+    </script>
+  </body>
+</html>
