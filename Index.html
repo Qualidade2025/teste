@@ -87,7 +87,18 @@
       }
 
       .logo-wrap img {
+        display: none;
         object-fit: contain;
+      }
+
+      html[data-theme="dark"] .logo-wrap .logo-dark,
+      body[data-theme="dark"] .logo-wrap .logo-dark {
+        display: block;
+      }
+
+      html[data-theme="light"] .logo-wrap .logo-light,
+      body[data-theme="light"] .logo-wrap .logo-light {
+        display: block;
       }
 
       .logo-wrap .fallback {
@@ -175,9 +186,16 @@
     <section id="splash" class="screen" aria-label="Splash screen">
       <div id="logoWrap" class="logo-wrap" role="img" aria-label="Logo Baldi">
         <img
-          id="logo"
-          alt="Baldi"
-          src="https://i.ibb.co/rfcpBcX0/Logo-Baldi-Sem-Fundo-Preta.png"
+          id="logoDark"
+          class="logo-dark"
+          alt="Baldi branca"
+          src="https://i.ibb.co/933KM0KH/Logo-Baldi-Vers-o-Correta-Branca.png"
+        />
+        <img
+          id="logoLight"
+          class="logo-light"
+          alt="Baldi preta"
+          src="https://i.ibb.co/PzDD4QLk/Logo-Baldi-Vers-o-Correta-Preta.png"
         />
         <div id="logoFallback" class="fallback">Baldi</div>
         <div id="logoMask" class="logo-mask" aria-hidden="true"></div>
@@ -195,13 +213,19 @@
 
         const splash = document.getElementById('splash');
         const main = document.getElementById('main');
-        const logo = document.getElementById('logo');
+        const logoDark = document.getElementById('logoDark');
+        const logoLight = document.getElementById('logoLight');
         const logoWrap = document.getElementById('logoWrap');
         const logoMask = document.getElementById('logoMask');
         const fallback = document.getElementById('logoFallback');
         const themeToggle = document.getElementById('themeToggle');
 
         const THEME_KEY = 'baldi-theme';
+        const getActiveLogo = () => {
+          const theme = document.documentElement.getAttribute('data-theme');
+          return theme === 'light' ? logoLight : logoDark;
+        };
+
         const applyTheme = (theme) => {
           const nextTheme = (theme === 'light') ? 'light' : 'dark';
           document.documentElement.setAttribute('data-theme', nextTheme);
@@ -222,17 +246,24 @@
           localStorage.setItem(THEME_KEY, nextTheme);
         });
 
-        // Fallback simples caso a imagem externa não carregue.
-        logo.addEventListener('error', () => {
-          logo.style.display = 'none';
+        // Fallback simples caso a imagem ativa não carregue.
+        const handleLogoError = (event) => {
+          if (event.currentTarget !== getActiveLogo()) {
+            return;
+          }
+
+          event.currentTarget.style.display = 'none';
           fallback.style.display = 'grid';
-        });
+        };
+
+        logoDark.addEventListener('error', handleLogoError);
+        logoLight.addEventListener('error', handleLogoError);
 
         // Sequência: máscara termina -> glow -> entra tela principal.
         logoMask.addEventListener('animationend', () => {
           logoWrap.classList.add('glow');
 
-          const glowTarget = (logo.style.display === 'none') ? fallback : logo;
+          const glowTarget = fallback.style.display === 'grid' ? fallback : getActiveLogo();
 
           glowTarget.addEventListener('animationend', () => {
             main.setAttribute('data-ready', 'true');
