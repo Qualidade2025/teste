@@ -56,6 +56,9 @@ function criarRNC_SalvarBasico(token, pv, op, clienteLivre, origem, fornecedor, 
   row[cols.cliente.index] = area;
   row[cols.fornecedor.index] = fornecedor;
   row[cols.descricaoNc.index] = motivo;
+  
+  var rncsRelacionadas = _findSimilarRncs_(sh, rncId, fornecedor, motivo);
+  if (rncsRelacionadas.length) row[cols.reincidencia.index] = REINCIDENCIA_POSSIVEL;
   sh.appendRow(row);
 
   var newRow = sh.getLastRow();
@@ -82,7 +85,8 @@ function criarRNC_SalvarBasico(token, pv, op, clienteLivre, origem, fornecedor, 
         disposicao: disposicao,
         descricaoAcaoCorretiva: descCorrecao,
         areaUsuario: area,
-        usuarioAbertura: sess.usuario || ''
+        usuarioAbertura: sess.usuario || '',
+        rncsRelacionadas: rncsRelacionadas
       });
       if (driveJson && driveJson.error) driveError = String(driveJson.error);
       fileUrl = (driveJson && driveJson.fileUrl) || '';
@@ -108,7 +112,9 @@ function criarRNC_SalvarBasico(token, pv, op, clienteLivre, origem, fornecedor, 
       fileUrl: fileUrl,
       monthFolderUrl: monthFolderUrl,
       driveError: driveError,
-      anexos: (attachRes && attachRes.items) ? attachRes.items : []
+      anexos: (attachRes && attachRes.items) ? attachRes.items : [],
+      reincidencia: rncsRelacionadas.length ? REINCIDENCIA_POSSIVEL : '',
+      rncsRelacionadas: rncsRelacionadas
     };
   } catch (e) {
     // garante retorno para o failureHandler no front-end
