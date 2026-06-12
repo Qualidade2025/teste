@@ -7,6 +7,7 @@ var DEV_MODE = null;
 var ANEXOS_ABERTURA = [], ANEXOS_RESPOSTA = [], ANEXOS_CONCLUSAO = [], ANEXOS_IMPROCEDENTE = [];
 var LAST_DEV_ROWS = [], LAST_PEND_ROWS = [], LAST_ALL_ROWS = [], LAST_RNC_ROWS = [];
 var CURRENT_RESPOSTA = null, CURRENT_VALIDACAO_CONCLUSAO = null;
+var CURRENT_REINCIDENCIA = '', CURRENT_REINCIDENCIA_RNC = '';
 var selecionarConclusaoResolver = null;
 var confirmarAnexoRespostaResolver = null;
 var THEME_KEY = 'portal-theme';
@@ -105,6 +106,104 @@ function fmtDateOnly(dIso){
     return dd+'/'+mm+'/'+yyyy;
   }
   return '';
+}
+
+function getReincidenciaLabel(value){
+  if (value === 'Possível reincidência') return '⚠ Possível reincidência';
+  if (value === 'Provável') return '⚠ Reincidência provável';
+  if (value === 'Sim') return '⚠ Reincidência';
+  return '';
+}
+
+function renderReincidenciaBadge(id, value, actionable){
+  var el = document.getElementById(id);
+  if (!el) return;
+  var label = getReincidenciaLabel(value);
+  el.textContent = label;
+  el.classList.toggle('hidden', !label);
+  el.classList.toggle('reincidencia-action', !!actionable && !!label);
+  if (actionable && label) el.setAttribute('title', 'Classificar reincidência');
+  else el.removeAttribute('title');
+}
+
+function renderHistoricoSemelhante(items, visible){
+  var el = document.getElementById('respHistoricoSemelhante');
+  if (!el) return;
+  el.innerHTML = '';
+  el.classList.toggle('hidden', !visible || !items || !items.length);
+  if (!visible || !items || !items.length) return;
+  el.appendChild(document.createTextNode('Histórico semelhante encontrado: '));
+  items.forEach(function(item, idx){
+    if (idx) el.appendChild(document.createTextNode(', '));
+    var link = document.createElement('a');
+    link.href = '#';
+    link.textContent = item.rnc || '';
+    link.onclick = function(ev){
+      ev.preventDefault();
+      abrirVisualizar(item.rnc, item.ano, item.mesNome);
+    };
+    el.appendChild(link);
+  });
+}
+
+function applyResponderReincidencia(res){
+  CURRENT_REINCIDENCIA = String(res && res.reincidencia || '').trim();
+  CURRENT_REINCIDENCIA_RNC = String(document.getElementById('resp_rnc').value || '').trim();
+  var possivel = CURRENT_REINCIDENCIA === 'Possível reincidência';
+  renderReincidenciaBadge('respReincidenciaConst', CURRENT_REINCIDENCIA, false);
+  renderReincidenciaBadge('respReincidenciaResp', CURRENT_REINCIDENCIA, false);
+  renderReincidenciaBadge('respReincidenciaVal', CURRENT_REINCIDENCIA, RESP_MODE === 'resposta' && possivel && isUserQualidade());
+
+  var constEl = document.getElementById('respReincidenciaConst');
+  if (constEl) constEl.classList.toggle('hidden', RESP_MODE !== 'abertura' || !getReincidenciaLabel(CURRENT_REINCIDENCIA));
+  var respEl = document.getElementById('respReincidenciaResp');
+  if (respEl) respEl.classList.toggle('hidden', ['responder','concluir'].indexOf(RESP_MODE) === -1 || !getReincidenciaLabel(CURRENT_REINCIDENCIA));
+  var valEl = document.getElementById('respReincidenciaVal');
+  if (valEl) valEl.classList.toggle('hidden', ['resposta','conclusao'].indexOf(RESP_MODE) === -1 || !getReincidenciaLabel(CURRENT_REINCIDENCIA));
+
+  renderHistoricoSemelhante(res && res.rncsRelacionadas, RESP_MODE === 'responder' && possivel);
+  var btn = document.getElementById('btnValidarResp2');
+  if (btn) btn.setAttribute('aria-disabled', RESP_MODE === 'resposta' && possivel ? 'true' : 'false');
+}
+
+function applyVisualizarReincidencia(res, hasResponse){
+  var value = String(res && res.reincidencia || '').trim();
+  var showConst = !hasResponse;
+  renderReincidenciaBadge('visReincidenciaConst', showConst ? value : '', false);
+  renderReincidenciaBadge('visReincidenciaResp', hasResponse ? value : '', false);
+}
+
+function abrirClassificarReincidenciaModal(){
+  if (RESP_MODE !== 'resposta' || CURRENT_REINCIDENCIA !== 'Possível reincidência' || !isUserQualidade()) return;
+  var modal = document.getElementById('classificarReincidenciaModal');
+  var msg = document.getElementById('classificarReincidenciaMsg');
+  if (msg) msg.textContent = '';
+  if (modal) modal.classList.remove('hidden');
+}
+
+function fecharClassificarReincidenciaModal(){
+  var modal = document.getElementById('classificarReincidenciaModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+function salvarClassificacaoReincidencia(value){
+  var msg = document.getElementById('classificarReincidenciaMsg');
+  if (msg) msg.textContent = '';
+  beginGlobalLoading();
+  google.script.run
+    .withFailureHandler(function(err){
+      endGlobalLoading();
+      if (msg) msg.textContent = (err && err.message) ? err.message : String(err);
+    })
+    .withSuccessHandler(function(res){
+      endGlobalLoading();
+      CURRENT_REINCIDENCIA = String(res && res.reincidencia || value);
+      fecharClassificarReincidenciaModal();
+      applyResponderReincidencia({ reincidencia: CURRENT_REINCIDENCIA, rncsRelacionadas: [] });
+      var out = document.getElementById('qualidadeMsgResp2');
+      if (out) out.textContent = 'Análise de reincidência classificada.';
+    })
+    .classificarReincidencia(TOKEN, CURRENT_REINCIDENCIA_RNC, value);
 }
 
 function normalizeAreaName(area){
@@ -1525,6 +1624,10 @@ function prepararPainelDireitoParaResposta(){
     DEV_MODE = null;
   CURRENT_RESPOSTA = null;
   CURRENT_VALIDACAO_CONCLUSAO = null;
+  CURRENT_REINCIDENCIA = ''; CURRENT_REINCIDENCIA_RNC = '';
+  ['respReincidenciaConst','respReincidenciaResp','respReincidenciaVal'].forEach(function(id){ renderReincidenciaBadge(id, '', false); });
+  renderHistoricoSemelhante([], false);
+  fecharClassificarReincidenciaModal();
 
   var rb = document.getElementById('retornoBox'); if (rb) rb.classList.add('hidden');
   var rm = document.getElementById('retMotivo'); if (rm) rm.value = '';
@@ -1758,6 +1861,7 @@ function preencherCamposResponder(rnc, ano, mes){
       document.getElementById('resp_descCorrecao').value = d.descricaoAcaoCorretiva || '';
       autoResizeTextarea(document.getElementById('resp_descricao'));
       autoResizeTextarea(document.getElementById('resp_descCorrecao'));
+      applyResponderReincidencia(res);
 
       /* ====== Dados de resposta ====== */
       var r = d.resposta || null;
@@ -2763,6 +2867,10 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
   if (!rnc) return;
 
   var msgEl = document.getElementById('qualidadeMsgResp2');
+  if (mode === 'resposta' && CURRENT_REINCIDENCIA === 'Possível reincidência') {
+    if (msgEl) msgEl.textContent = 'Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.';
+    return;
+  }
   if (mode !== 'conclusao') beginGlobalLoading();
 
   if (mode === 'conclusao'){
@@ -2851,6 +2959,14 @@ if (btnConfirmarAnexoRespostaNao) btnConfirmarAnexoRespostaNao.onclick = functio
 var btnFecharConfirmarAnexoResposta = document.getElementById('btnFecharConfirmarAnexoResposta');
 if (btnFecharConfirmarAnexoResposta) btnFecharConfirmarAnexoResposta.onclick = function(){ fecharConfirmarAnexoRespostaModal(false); };
 
+var respReincidenciaVal = document.getElementById('respReincidenciaVal');
+if (respReincidenciaVal) respReincidenciaVal.onclick = abrirClassificarReincidenciaModal;
+var btnFecharClassificarReincidencia = document.getElementById('btnFecharClassificarReincidencia');
+if (btnFecharClassificarReincidencia) btnFecharClassificarReincidencia.onclick = fecharClassificarReincidenciaModal;
+Array.prototype.forEach.call(document.querySelectorAll('.reincidencia-option'), function(btn){
+  btn.onclick = function(){ salvarClassificacaoReincidencia(this.dataset.reincidencia || ''); };
+});
+
 /* ================== VISUALIZAR ================== */
 function abrirVisualizar(rnc, ano, mes){
   beginGlobalLoading();
@@ -2877,7 +2993,9 @@ function abrirVisualizar(rnc, ano, mes){
   var visImpTxt = document.getElementById('vis_motivoImprocedente'); if (visImpTxt) visImpTxt.value = '';
   var visCausaSec = document.getElementById('vis_causaRaizSection'); if (visCausaSec) visCausaSec.classList.remove('hidden');
   var visSolTitle = document.getElementById('vis_solucoesTitle'); if (visSolTitle) visSolTitle.textContent = 'SOLUÇÃO';
-  
+  renderReincidenciaBadge('visReincidenciaConst', '', false);
+  renderReincidenciaBadge('visReincidenciaResp', '', false);  
+
   google.script.run
     .withFailureHandler(function(err){
       endGlobalLoading();
@@ -2918,6 +3036,7 @@ function abrirVisualizar(rnc, ano, mes){
 
       // Bloco de resposta (exibe apenas se houver)
       var r = d.resposta || null;
+      applyVisualizarReincidencia(res, !!r);
       if (splitEl) splitEl.classList.toggle('print-left-only', !r);
       if (r){
         if (body) body.classList.remove('hidden');
