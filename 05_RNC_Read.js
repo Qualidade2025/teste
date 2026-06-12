@@ -29,6 +29,8 @@ function obterRNC(token, rncId, ano, mesNome) {
   // Data de abertura e status (coluna C)
   var dataAbertura = '';
   var statusEtapa = '';
+  var reincidencia = '';
+  var rncsRelacionadas = [];
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName('Controle');
   if (sh) {
@@ -38,6 +40,12 @@ function obterRNC(token, rncId, ano, mesNome) {
       if (String(vals[r][cols.rnc.index]||'').trim() === rncId){
         dataAbertura = fmtDateOnly(vals[r][cols.dataAbertura.index]);
         statusEtapa  = String(vals[r][cols.etapa.index]||'').trim();
+        reincidencia = String(vals[r][cols.reincidencia.index]||'').trim();
+        rncsRelacionadas = Array.isArray(obj.rncsRelacionadas)
+          ? obj.rncsRelacionadas
+          : (reincidencia === REINCIDENCIA_POSSIVEL
+            ? _findSimilarRncs_(sh, rncId, vals[r][cols.fornecedor.index], vals[r][cols.descricaoNc.index])
+            : []);
         break;
       }
     }
@@ -83,6 +91,8 @@ function obterRNC(token, rncId, ano, mesNome) {
     dataAbertura: dataAbertura,
     statusEtapa: statusEtapa,
     retornoMsg: retornoMsg,
-    retornoEtapa: retornoEtapa
+    retornoEtapa: retornoEtapa,
+    reincidencia: reincidencia,
+    rncsRelacionadas: rncsRelacionadas
   };
 }
