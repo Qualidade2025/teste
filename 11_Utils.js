@@ -84,7 +84,8 @@ var CONTROLE_HEADER_TITLES = {
   cor: 'Cor',
   prazoControle: 'Prazo',
   backup: 'Backup',
-  motivoCancelamento: 'Motivo Cancelamento'
+  motivoCancelamento: 'Motivo Cancelamento',
+  reincidencia: 'Reincidência'
 };
 
 var _controleColumnsCache_ = { signature: null, map: null, sheetId: null };
@@ -128,5 +129,60 @@ function _copyControleFormulas_(sh, newRow) {
     if (source.getFormula()) {
       source.copyTo(sh.getRange(newRow, col), SpreadsheetApp.CopyPasteType.PASTE_FORMULA, false);
     }
+  });
+}
+
+// Reincidência
+var REINCIDENCIA_POSSIVEL = 'Possível reincidência';
+var REINCIDENCIA_CLASSIFICACOES = ['Não', 'Provável', 'Sim'];
+
+function _extractRncNumericId_(rnc) {
+  var match = String(rnc || '').match(/\d+/);
+  return match ? parseInt(match[0], 10) : -1;
+}
+
+function _findSimilarRncs_(sh, currentRncId, fornecedor, motivo) {
+  if (!sh) return [];
+  var currentNumber = _extractRncNumericId_(currentRncId);
+  if (currentNumber < 0) return [];
+
+  fornecedor = String(fornecedor || '').trim();
+  motivo = String(motivo || '').trim();
+  if (!fornecedor || !motivo) return [];
+
+  var cols = _getControleColumnIndices_(sh);
+  var vals = sh.getDataRange().getValues();
+  var meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+  var related = [];
+
+  for (var r = 1; r < vals.length; r++) {
+    var id = String(vals[r][cols.rnc.index] || '').trim();
+    if (!id || _extractRncNumericId_(id) >= currentNumber) continue;
+    if (String(vals[r][cols.fornecedor.index] || '').trim() !== fornecedor) continue;
+    if (String(vals[r][cols.descricaoNc.index] || '').trim() !== motivo) continue;
+    if (String(vals[r][cols.etapa.index] || '').trim() !== 'Conclusão') continue;
+
+    var openedAt = vals[r][cols.dataAbertura.index];
+    var date = openedAt instanceof Date ? openedAt : new Date(openedAt);
+    related.push({
+      rnc: id,
+      ano: !isNaN(date) ? String(date.getFullYear()) : '',
+      mesNome: !isNaN(date) ? meses[date.getMonth()] : ''
+    });
+  }
+
+  related.sort(function (a, b) {
+    return _extractRncNumericId_(a.rnc) - _extractRncNumericId_(b.rnc);
+  });
+  return related;
+}
+
+function _isQualidadeSession_(sess) {
+  var areas = Array.isArray(sess && sess.areas) && sess.areas.length
+    ? sess.areas
+    : [sess && sess.area];
+  return areas.some(function (area) {
+    return String(area || '').trim().toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '') === 'qualidade';
   });
 }
