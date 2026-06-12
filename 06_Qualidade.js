@@ -77,6 +77,9 @@ function validarResposta(token, rncId) {
     if (code === rncId) { targetRow = r+1; break; }
   }
   if (targetRow === -1) throw new Error('RNC não encontrada na aba Controle.');
+  if (String(vals[targetRow - 1][cols.reincidencia.index] || '').trim() === REINCIDENCIA_POSSIVEL) {
+    throw new Error('Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.');
+  }
 
   var motivoCancelamento = String(vals[targetRow-1][cols.motivoCancelamento.index] || '').trim();
   var statusFinal = motivoCancelamento ? 'Cancelada' : 'Resposta';
