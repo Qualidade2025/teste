@@ -29,6 +29,7 @@ function obterRNC(token, rncId, ano, mesNome) {
   // Data de abertura e status (coluna C)
   var dataAbertura = '';
   var statusEtapa = '';
+  var reincidencia = '';
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName('Controle');
   if (sh) {
@@ -38,6 +39,7 @@ function obterRNC(token, rncId, ano, mesNome) {
       if (String(vals[r][cols.rnc.index]||'').trim() === rncId){
         dataAbertura = fmtDateOnly(vals[r][cols.dataAbertura.index]);
         statusEtapa  = String(vals[r][cols.etapa.index]||'').trim();
+        reincidencia = String(vals[r][cols.reincidencia.index]||'').trim();
         break;
       }
     }
@@ -82,6 +84,7 @@ function obterRNC(token, rncId, ano, mesNome) {
     mesNome: mesNome,
     dataAbertura: dataAbertura,
     statusEtapa: statusEtapa,
+    reincidencia: reincidencia,
     retornoMsg: retornoMsg,
     retornoEtapa: retornoEtapa
   };
