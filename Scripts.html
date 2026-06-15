@@ -2817,9 +2817,9 @@ function atualizarEtiquetaReincidencia(valor, etapa){
   var podeClassificar = RESP_MODE === 'resposta' && etapa === 'Validação resposta' && isUserQualidade();
   var texto = textoEtiquetaReincidencia(valor);
   var exibirInformativa = !!texto && valor !== 'Não';
-  var exibirResposta = RESP_MODE !== 'abertura' && etapa !== 'Abertura';
-  var exibirTagResposta = exibirResposta && (podeClassificar || exibirInformativa);
-  var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa && !exibirTagResposta;
+  var exibirResposta = RESP_MODE === 'responder';
+  var exibirTagResposta = RESP_MODE !== 'abertura' && etapa !== 'Abertura' && (podeClassificar || exibirInformativa);
+  var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa;
   if (podeClassificar && !texto) texto = '! Possível reincidência';
 
   [
