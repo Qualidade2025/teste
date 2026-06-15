@@ -2783,7 +2783,8 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
   }
 
   if (!this.dataset.reincidencia || this.dataset.reincidencia === 'Possível reincidência'){
-    if (msgEl) msgEl.textContent = 'Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.';
+    showInlineMsg(msgEl, 'Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.');
+    if (msgEl) msgEl.style.display = 'block';
     return;
   }
   beginGlobalLoading();
