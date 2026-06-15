@@ -2806,7 +2806,7 @@ function textoEtiquetaReincidencia(valor){
   if (valor === 'Não') return 'Análise de reincidência: Não';
   if (valor === 'Provável') return '⚠ Reincidência provável';
   if (valor === 'Sim') return '⚠ Reincidência';
-  if (valor === 'Possível reincidência') return '⚠ Possível reincidência';
+  if (valor === 'Possível reincidência') return '! Possível reincidência';
   return '';
 }
 
@@ -2817,13 +2817,15 @@ function atualizarEtiquetaReincidencia(valor, etapa){
   var podeClassificar = RESP_MODE === 'resposta' && etapa === 'Validação resposta' && isUserQualidade();
   var texto = textoEtiquetaReincidencia(valor);
   var exibirInformativa = !!texto && valor !== 'Não';
-  var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa;
   var exibirResposta = RESP_MODE !== 'abertura' && etapa !== 'Abertura';
+  var exibirTagResposta = exibirResposta && (podeClassificar || exibirInformativa);
+  var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa && !exibirTagResposta;
+  if (podeClassificar && !texto) texto = '! Possível reincidência';
 
   [
     { id: 'reincidenciaTagConstatacao', exibir: exibirConstatacao, clicavel: false },
     { id: 'reincidenciaTagResposta', exibir: exibirResposta && exibirInformativa, clicavel: false },
-    { id: 'reincidenciaTagValidacaoResposta', exibir: exibirResposta && (podeClassificar || exibirInformativa), clicavel: podeClassificar }
+    { id: 'reincidenciaTagValidacaoResposta', exibir: exibirTagResposta, clicavel: podeClassificar }
   ].forEach(function(config){
     var tag = document.getElementById(config.id);
     if (!tag) return;
@@ -2843,8 +2845,9 @@ function fecharClassificarReincidencia(){
   var tag = document.getElementById(id);
   if (tag) tag.onclick = function(){
     if (this.disabled) return;
-    var select = document.getElementById('classificacaoReincidencia');
-    if (select) select.value = ['Não', 'Provável', 'Sim'].indexOf(this.dataset.valor) !== -1 ? this.dataset.valor : '';
+    document.querySelectorAll('input[name="classificacaoReincidencia"]').forEach(function(input){
+      input.checked = input.value === this.dataset.valor;
+    }, this);
     document.getElementById('classificarReincidenciaMsg').textContent = '';
     document.getElementById('classificarReincidenciaModal').classList.remove('hidden');
   };
@@ -2852,7 +2855,8 @@ function fecharClassificarReincidencia(){
 
 var btnSalvarClassificarReincidencia = document.getElementById('btnSalvarClassificarReincidencia');
 if (btnSalvarClassificarReincidencia) btnSalvarClassificarReincidencia.onclick = function(){
-  var classificacao = document.getElementById('classificacaoReincidencia').value;
+  var selecionada = document.querySelector('input[name="classificacaoReincidencia"]:checked');
+  var classificacao = selecionada ? selecionada.value : '';
   var rnc = document.getElementById('btnValidarResp2').dataset.rnc;
   var msg = document.getElementById('classificarReincidenciaMsg');
   if (!classificacao) { msg.textContent = 'Selecione uma classificação.'; return; }
@@ -2864,6 +2868,15 @@ if (btnSalvarClassificarReincidencia) btnSalvarClassificarReincidencia.onclick =
     })
     .classificarReincidencia(TOKEN, rnc, classificacao);
 };
+
+document.querySelectorAll('input[name="classificacaoReincidencia"]').forEach(function(input){
+  input.onchange = function(){
+    if (!this.checked) return;
+    document.querySelectorAll('input[name="classificacaoReincidencia"]').forEach(function(outro){
+      if (outro !== input) outro.checked = false;
+    });
+  };
+});
 
 var btnFecharClassificarReincidencia = document.getElementById('btnFecharClassificarReincidencia');
 if (btnFecharClassificarReincidencia) btnFecharClassificarReincidencia.onclick = fecharClassificarReincidencia;
