@@ -2839,7 +2839,22 @@ function atualizarEtiquetaReincidencia(valor, etapa){
 
 function fecharClassificarReincidencia(){
   var modal = document.getElementById('classificarReincidenciaModal');
+  if (modal && modal.getAttribute('aria-busy') === 'true') return;
   if (modal) modal.classList.add('hidden');
+}
+
+function setClassificarReincidenciaLoading(loading){
+  var modal = document.getElementById('classificarReincidenciaModal');
+  var indicador = document.getElementById('classificarReincidenciaLoading');
+  if (modal) modal.setAttribute('aria-busy', loading ? 'true' : 'false');
+  if (indicador) indicador.classList.toggle('hidden', !loading);
+  ['btnFecharClassificarReincidencia','btnCancelarClassificarReincidencia','btnSalvarClassificarReincidencia'].forEach(function(id){
+    var botao = document.getElementById(id);
+    if (botao) botao.disabled = loading;
+  });
+  document.querySelectorAll('input[name="classificacaoReincidencia"]').forEach(function(input){
+    input.disabled = loading;
+  });
 }
 
 ['reincidenciaTagConstatacao','reincidenciaTagResposta','reincidenciaTagValidacaoResposta'].forEach(function(id){
@@ -2861,9 +2876,15 @@ if (btnSalvarClassificarReincidencia) btnSalvarClassificarReincidencia.onclick =
   var rnc = document.getElementById('btnValidarResp2').dataset.rnc;
   var msg = document.getElementById('classificarReincidenciaMsg');
   if (!classificacao) { msg.textContent = 'Selecione uma classificação.'; return; }
+  msg.textContent = '';
+  setClassificarReincidenciaLoading(true);
   google.script.run
-    .withFailureHandler(function(err){ msg.textContent = (err && err.message) ? err.message : String(err); })
+    .withFailureHandler(function(err){
+      setClassificarReincidenciaLoading(false);
+      msg.textContent = (err && err.message) ? err.message : String(err);
+    })
     .withSuccessHandler(function(res){
+      setClassificarReincidenciaLoading(false);
       atualizarEtiquetaReincidencia(res.classificacao, 'Validação resposta');
       fecharClassificarReincidencia();
     })
