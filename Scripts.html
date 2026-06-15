@@ -1725,7 +1725,7 @@ function preencherCamposResponder(rnc, ano, mes){
       endGlobalLoading();
       var d = res && res.dados ? res.dados : {};
       var anex = Array.isArray(res.anexos) ? res.anexos : [];
-      atualizarEtiquetaReincidencia(res && res.reincidencia, res && res.statusEtapa);
+      atualizarEtiquetaReincidencia(res && res.reincidencia, res && res.statusEtapa, res && res.reincidenciasProvaveis);
 
       var retMsgResp = document.getElementById('retornoMsgResp');
       var etapaRetornoResp = (res && res.retornoEtapa) ? String(res.retornoEtapa).toLowerCase() : '';
@@ -2811,7 +2811,7 @@ function textoEtiquetaReincidencia(valor){
   return '';
 }
 
-function atualizarEtiquetaReincidencia(valor, etapa){
+function atualizarEtiquetaReincidencia(valor, etapa, reincidenciasProvaveis){
   var btn = document.getElementById('btnValidarResp2');
   valor = String(valor || '').trim();
   if (btn) btn.dataset.reincidencia = valor;
@@ -2834,6 +2834,21 @@ function atualizarEtiquetaReincidencia(valor, etapa){
     tag.dataset.valor = valor;
     tag.disabled = !config.clicavel;
     tag.classList.toggle('hidden', !config.exibir);
+
+    var box = document.getElementById(config.id.replace('reincidenciaTag', 'reincidenciasProvaveis'));
+    if (!box) return;
+    var links = box.querySelector('.reincidencias-provaveis-links');
+    var itens = Array.isArray(reincidenciasProvaveis) ? reincidenciasProvaveis : [];
+    box.classList.toggle('hidden', !config.exibir);
+    links.innerHTML = itens.length ? itens.map(function(item){
+      return '<a href="#" class="link reincidencia-provavel-link" data-rnc="'+esc(item.rnc)+'" data-ano="'+esc(item.ano)+'" data-mes="'+esc(item.mesNome)+'">'+esc(item.rnc)+'</a>';
+    }).join('') : '—';
+    links.querySelectorAll('.reincidencia-provavel-link').forEach(function(link){
+      link.onclick = function(e){
+        e.preventDefault();
+        abrirVisualizar(this.dataset.rnc, this.dataset.ano, this.dataset.mes);
+      };
+    });
   });
 }
 
@@ -2991,7 +3006,7 @@ function abrirVisualizar(rnc, ano, mes){
   var visImpTxt = document.getElementById('vis_motivoImprocedente'); if (visImpTxt) visImpTxt.value = '';
   var visCausaSec = document.getElementById('vis_causaRaizSection'); if (visCausaSec) visCausaSec.classList.remove('hidden');
   var visSolTitle = document.getElementById('vis_solucoesTitle'); if (visSolTitle) visSolTitle.textContent = 'SOLUÇÃO';
-  atualizarEtiquetaReincidenciaVisualizar('', false);
+  atualizarEtiquetaReincidenciaVisualizar('', false, []);
 
   google.script.run
     .withFailureHandler(function(err){
@@ -3033,7 +3048,7 @@ function abrirVisualizar(rnc, ano, mes){
 
       // Bloco de resposta (exibe apenas se houver)
       var r = d.resposta || null;
-      atualizarEtiquetaReincidenciaVisualizar(res && res.reincidencia, !!r);
+      atualizarEtiquetaReincidenciaVisualizar(res && res.reincidencia, !!r, res && res.reincidenciasProvaveis);
       if (splitEl) splitEl.classList.toggle('print-left-only', !r);
       if (r){
         if (body) body.classList.remove('hidden');
@@ -3093,13 +3108,37 @@ function abrirVisualizar(rnc, ano, mes){
     .obterRNC(TOKEN, rnc, ano, mes);
 }
 
-function atualizarEtiquetaReincidenciaVisualizar(valor, temResposta){
+function atualizarEtiquetaReincidenciaVisualizar(valor, temResposta, reincidenciasProvaveis){
   var tag = document.getElementById('visReincidenciaTag');
   if (!tag) return;
   valor = String(valor || '').trim();
   var texto = textoEtiquetaReincidencia(valor);
+  var exibir = temResposta && !!texto && valor !== 'Não';
   tag.textContent = texto;
-  tag.classList.toggle('hidden', !temResposta || !texto || valor === 'Não');
+  tag.classList.toggle('hidden', !exibir);
+
+  var box = document.getElementById('visReincidenciasProvaveis');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'visReincidenciasProvaveis';
+    box.className = 'reincidencias-provaveis hidden';
+    box.innerHTML = '<label>Reincidências prováveis</label><div class="reincidencias-provaveis-links"></div>';
+    var titleRow = tag.closest('.section-title-row');
+    if (titleRow) titleRow.insertAdjacentElement('afterend', box);
+  }
+  if (!box) return;
+  var links = box.querySelector('.reincidencias-provaveis-links');
+  var itens = Array.isArray(reincidenciasProvaveis) ? reincidenciasProvaveis : [];
+  box.classList.toggle('hidden', !exibir);
+  links.innerHTML = itens.length ? itens.map(function(item){
+    return '<a href="#" class="link reincidencia-provavel-link" data-rnc="'+esc(item.rnc)+'" data-ano="'+esc(item.ano)+'" data-mes="'+esc(item.mesNome)+'">'+esc(item.rnc)+'</a>';
+  }).join('') : '—';
+  links.querySelectorAll('.reincidencia-provavel-link').forEach(function(link){
+    link.onclick = function(e){
+      e.preventDefault();
+      abrirVisualizar(this.dataset.rnc, this.dataset.ano, this.dataset.mes);
+    };
+  });
 }
 
 /* ================== Linhas dinâmicas de Soluções ================== */
