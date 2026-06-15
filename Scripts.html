@@ -2782,7 +2782,7 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
     return;
   }
 
-  if (this.dataset.reincidencia === 'Possível reincidência'){
+  if (!this.dataset.reincidencia || this.dataset.reincidencia === 'Possível reincidência'){
     if (msgEl) msgEl.textContent = 'Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.';
     return;
   }
@@ -2806,7 +2806,7 @@ function textoEtiquetaReincidencia(valor){
   if (valor === 'Não') return 'Análise de reincidência: Não';
   if (valor === 'Provável') return '⚠ Reincidência provável';
   if (valor === 'Sim') return '⚠ Reincidência';
-  if (valor === 'Possível reincidência') return '! Possível reincidência';
+  if (valor === 'Possível reincidência') return '⚠ Possível reincidência';
   return '';
 }
 
@@ -2817,10 +2817,10 @@ function atualizarEtiquetaReincidencia(valor, etapa){
   var podeClassificar = RESP_MODE === 'resposta' && etapa === 'Validação resposta' && isUserQualidade();
   var texto = textoEtiquetaReincidencia(valor);
   var exibirInformativa = !!texto && valor !== 'Não';
-  var exibirResposta = RESP_MODE === 'responder';
+  var exibirResposta = RESP_MODE === 'responder' || RESP_MODE === 'concluir';
   var exibirTagResposta = RESP_MODE !== 'abertura' && etapa !== 'Abertura' && (podeClassificar || exibirInformativa);
   var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa;
-  if (podeClassificar && !texto) texto = '! Possível reincidência';
+  if (podeClassificar && !texto) texto = '⚠ Possível reincidência';
 
   [
     { id: 'reincidenciaTagConstatacao', exibir: exibirConstatacao, clicavel: false },
