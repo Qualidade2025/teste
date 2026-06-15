@@ -186,13 +186,21 @@
         <button class="btn-grey modal-close" id="btnFecharClassificarReincidencia" type="button">✕</button>
       </div>
       <div class="modal-body" style="min-height:0">
-        <label>Resultado da análise</label>
-        <select id="classificacaoReincidencia">
-          <option value="">— selecione —</option>
-          <option>Não</option>
-          <option>Provável</option>
-          <option>Sim</option>
-        </select>
+        <fieldset class="reincidencia-options">
+          <legend style="margin-bottom:8px">Resultado da análise</legend>
+          <label class="reincidencia-option">
+            <input type="checkbox" name="classificacaoReincidencia" value="Sim">
+            <span>É reincidência - causa raiz ou plano de ação repetidos</span>
+          </label>
+          <label class="reincidencia-option">
+            <input type="checkbox" name="classificacaoReincidencia" value="Provável">
+            <span>Possível reincidência - Faltam evidências para validar</span>
+          </label>
+          <label class="reincidencia-option">
+            <input type="checkbox" name="classificacaoReincidencia" value="Não">
+            <span>Não é reincidência</span>
+          </label>
+        </fieldset>
         <div id="classificarReincidenciaMsg" class="err" style="margin-top:8px"></div>
       </div>
       <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
