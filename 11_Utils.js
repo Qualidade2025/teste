@@ -84,7 +84,8 @@ var CONTROLE_HEADER_TITLES = {
   cor: 'Cor',
   prazoControle: 'Prazo',
   backup: 'Backup',
-  motivoCancelamento: 'Motivo Cancelamento'
+  motivoCancelamento: 'Motivo Cancelamento',
+  reincidencia: 'Reincidência'
 };
 
 var _controleColumnsCache_ = { signature: null, map: null, sheetId: null };
