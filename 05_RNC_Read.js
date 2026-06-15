@@ -30,6 +30,8 @@ function obterRNC(token, rncId, ano, mesNome) {
   var dataAbertura = '';
   var statusEtapa = '';
   var reincidencia = '';
+  var reincidenciasProvaveis = [];
+  var meses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
   var ss = SpreadsheetApp.getActive();
   var sh = ss.getSheetByName('Controle');
   if (sh) {
@@ -41,6 +43,23 @@ function obterRNC(token, rncId, ano, mesNome) {
         statusEtapa  = String(vals[r][cols.etapa.index]||'').trim();
         reincidencia = String(vals[r][cols.reincidencia.index]||'').trim();
         break;
+      }
+    }
+  }
+  if (reincidencia && obj.fornecedor && obj.motivo && sh) {
+    var fornecedorNormalizado = String(obj.fornecedor).trim().toLowerCase();
+    var motivoNormalizado = String(obj.motivo).trim().toLowerCase();
+    for (var p=1;p<vals.length;p++) {
+      var rncProvavel = String(vals[p][cols.rnc.index] || '').trim();
+      if (rncProvavel && rncProvavel !== rncId &&
+          String(vals[p][cols.fornecedor.index] || '').trim().toLowerCase() === fornecedorNormalizado &&
+          String(vals[p][cols.descricaoNc.index] || '').trim().toLowerCase() === motivoNormalizado) {
+        var dataProvavel = vals[p][cols.dataAbertura.index];
+        reincidenciasProvaveis.push({
+          rnc: rncProvavel,
+          ano: dataProvavel ? Utilities.formatDate(new Date(dataProvavel), tz, 'yyyy') : '',
+          mesNome: dataProvavel ? meses[new Date(dataProvavel).getMonth()] : ''
+        });
       }
     }
   }
@@ -85,6 +104,7 @@ function obterRNC(token, rncId, ano, mesNome) {
     dataAbertura: dataAbertura,
     statusEtapa: statusEtapa,
     reincidencia: reincidencia,
+    reincidenciasProvaveis: reincidenciasProvaveis,
     retornoMsg: retornoMsg,
     retornoEtapa: retornoEtapa
   };
