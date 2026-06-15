@@ -128,7 +128,9 @@ function _temPossivelReincidencia_(sh, cols, fornecedor, motivo) {
   var motivoNormalizado = String(motivo || '').trim().toLowerCase();
 
   return vals.some(function(row) {
-    return String(row[cols.fornecedor.index] || '').trim().toLowerCase() === fornecedorNormalizado &&
+    var etapaNormalizada = String(row[cols.etapa.index] || '').trim();
+    return etapaNormalizada === 'Conclusão' &&
+      String(row[cols.fornecedor.index] || '').trim().toLowerCase() === fornecedorNormalizado &&
       String(row[cols.descricaoNc.index] || '').trim().toLowerCase() === motivoNormalizado;
   });
 }
