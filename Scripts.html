@@ -776,7 +776,11 @@ function updateFilterButtons(tbl){
 /* ===== util para evidências no formulário de Abertura (Corrigir) ===== */
 function ensureCriarEvidenceBox(){
   var list = document.getElementById('criar_evidList');
-  if (list) return list;
+  var box = document.getElementById('criar_evidBox');
+  if (list && box) {
+    box.classList.remove('hidden');
+    return list;
+  }
   var firstRow = document.getElementById('rncCriar');
   var anchor = firstRow ? firstRow.parentElement : (document.getElementById('anexos')||{}).parentElement;
   if (!anchor || !anchor.parentNode) return null;
@@ -1602,6 +1606,7 @@ function prepararPainelDireitoParaResposta(){
 
   var h1 = document.querySelector('#view-responder h1');
   if (h1) h1.textContent = 'Responder RNC';
+  atualizarEtiquetaReincidencia('', '');
 }
 
 function abrirResponder(rnc, ano, mes, devolucaoTipo){
@@ -1720,6 +1725,7 @@ function preencherCamposResponder(rnc, ano, mes){
       endGlobalLoading();
       var d = res && res.dados ? res.dados : {};
       var anex = Array.isArray(res.anexos) ? res.anexos : [];
+      atualizarEtiquetaReincidencia(res && res.reincidencia, res && res.statusEtapa);
 
       var retMsgResp = document.getElementById('retornoMsgResp');
       var etapaRetornoResp = (res && res.retornoEtapa) ? String(res.retornoEtapa).toLowerCase() : '';
@@ -1907,7 +1913,7 @@ function clearCriarForm(){
     anexoEl.type = 'file';
   }
 
-  var bx = document.getElementById('criar_evidBox'); if (bx && bx.parentNode) bx.parentNode.removeChild(bx);
+  var bx = document.getElementById('criar_evidBox'); if (bx) bx.classList.add('hidden');
 }
 function abrirCriar(forceClear){
   EDIT_MODE = false; EDIT_RNC_ID=null;
@@ -2763,7 +2769,6 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
   if (!rnc) return;
 
   var msgEl = document.getElementById('qualidadeMsgResp2');
-  if (mode !== 'conclusao') beginGlobalLoading();
 
   if (mode === 'conclusao'){
     var concluidasPendentes = getIndicesConcluidosPendentes();
@@ -2776,6 +2781,12 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
     abrirModalValidacaoConclusao();
     return;
   }
+
+  if (this.dataset.reincidencia === 'Possível reincidência'){
+    if (msgEl) msgEl.textContent = 'Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.';
+    return;
+  }
+  beginGlobalLoading();
 
   var runner = google.script.run
     .withFailureHandler(function(err){
@@ -2790,6 +2801,74 @@ if (btnValidarResp2) btnValidarResp2.onclick = function(){
 
   runner.validarResposta(TOKEN, rnc);
 };
+
+function textoEtiquetaReincidencia(valor){
+  if (valor === 'Não') return 'Análise de reincidência: Não';
+  if (valor === 'Provável') return '⚠ Reincidência provável';
+  if (valor === 'Sim') return '⚠ Reincidência';
+  if (valor === 'Possível reincidência') return '⚠ Possível reincidência';
+  return '';
+}
+
+function atualizarEtiquetaReincidencia(valor, etapa){
+  var btn = document.getElementById('btnValidarResp2');
+  valor = String(valor || '').trim();
+  if (btn) btn.dataset.reincidencia = valor;
+  var podeClassificar = RESP_MODE === 'resposta' && etapa === 'Validação resposta' && isUserQualidade();
+  var texto = textoEtiquetaReincidencia(valor);
+  var exibirInformativa = !!texto && valor !== 'Não';
+  var exibirConstatacao = RESP_MODE === 'abertura' && etapa === 'Validação abertura' && exibirInformativa;
+  var exibirResposta = RESP_MODE !== 'abertura' && etapa !== 'Abertura';
+
+  [
+    { id: 'reincidenciaTagConstatacao', exibir: exibirConstatacao, clicavel: false },
+    { id: 'reincidenciaTagResposta', exibir: exibirResposta && exibirInformativa, clicavel: false },
+    { id: 'reincidenciaTagValidacaoResposta', exibir: exibirResposta && (podeClassificar || exibirInformativa), clicavel: podeClassificar }
+  ].forEach(function(config){
+    var tag = document.getElementById(config.id);
+    if (!tag) return;
+    tag.textContent = texto;
+    tag.dataset.valor = valor;
+    tag.disabled = !config.clicavel;
+    tag.classList.toggle('hidden', !config.exibir);
+  });
+}
+
+function fecharClassificarReincidencia(){
+  var modal = document.getElementById('classificarReincidenciaModal');
+  if (modal) modal.classList.add('hidden');
+}
+
+['reincidenciaTagConstatacao','reincidenciaTagResposta','reincidenciaTagValidacaoResposta'].forEach(function(id){
+  var tag = document.getElementById(id);
+  if (tag) tag.onclick = function(){
+    if (this.disabled) return;
+    var select = document.getElementById('classificacaoReincidencia');
+    if (select) select.value = ['Não', 'Provável', 'Sim'].indexOf(this.dataset.valor) !== -1 ? this.dataset.valor : '';
+    document.getElementById('classificarReincidenciaMsg').textContent = '';
+    document.getElementById('classificarReincidenciaModal').classList.remove('hidden');
+  };
+});
+
+var btnSalvarClassificarReincidencia = document.getElementById('btnSalvarClassificarReincidencia');
+if (btnSalvarClassificarReincidencia) btnSalvarClassificarReincidencia.onclick = function(){
+  var classificacao = document.getElementById('classificacaoReincidencia').value;
+  var rnc = document.getElementById('btnValidarResp2').dataset.rnc;
+  var msg = document.getElementById('classificarReincidenciaMsg');
+  if (!classificacao) { msg.textContent = 'Selecione uma classificação.'; return; }
+  google.script.run
+    .withFailureHandler(function(err){ msg.textContent = (err && err.message) ? err.message : String(err); })
+    .withSuccessHandler(function(res){
+      atualizarEtiquetaReincidencia(res.classificacao, 'Validação resposta');
+      fecharClassificarReincidencia();
+    })
+    .classificarReincidencia(TOKEN, rnc, classificacao);
+};
+
+var btnFecharClassificarReincidencia = document.getElementById('btnFecharClassificarReincidencia');
+if (btnFecharClassificarReincidencia) btnFecharClassificarReincidencia.onclick = fecharClassificarReincidencia;
+var btnCancelarClassificarReincidencia = document.getElementById('btnCancelarClassificarReincidencia');
+if (btnCancelarClassificarReincidencia) btnCancelarClassificarReincidencia.onclick = fecharClassificarReincidencia;
 
 var btnRetornarResp2 = document.getElementById('btnRetornarResp2');
 if (btnRetornarResp2) btnRetornarResp2.onclick = function(){
@@ -2877,7 +2956,8 @@ function abrirVisualizar(rnc, ano, mes){
   var visImpTxt = document.getElementById('vis_motivoImprocedente'); if (visImpTxt) visImpTxt.value = '';
   var visCausaSec = document.getElementById('vis_causaRaizSection'); if (visCausaSec) visCausaSec.classList.remove('hidden');
   var visSolTitle = document.getElementById('vis_solucoesTitle'); if (visSolTitle) visSolTitle.textContent = 'SOLUÇÃO';
-  
+  atualizarEtiquetaReincidenciaVisualizar('', false);
+
   google.script.run
     .withFailureHandler(function(err){
       endGlobalLoading();
@@ -2918,6 +2998,7 @@ function abrirVisualizar(rnc, ano, mes){
 
       // Bloco de resposta (exibe apenas se houver)
       var r = d.resposta || null;
+      atualizarEtiquetaReincidenciaVisualizar(res && res.reincidencia, !!r);
       if (splitEl) splitEl.classList.toggle('print-left-only', !r);
       if (r){
         if (body) body.classList.remove('hidden');
@@ -2975,6 +3056,15 @@ function abrirVisualizar(rnc, ano, mes){
       }
     })
     .obterRNC(TOKEN, rnc, ano, mes);
+}
+
+function atualizarEtiquetaReincidenciaVisualizar(valor, temResposta){
+  var tag = document.getElementById('visReincidenciaTag');
+  if (!tag) return;
+  valor = String(valor || '').trim();
+  var texto = textoEtiquetaReincidencia(valor);
+  tag.textContent = texto;
+  tag.classList.toggle('hidden', !temResposta || !texto || valor === 'Não');
 }
 
 /* ================== Linhas dinâmicas de Soluções ================== */
