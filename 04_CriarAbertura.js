@@ -56,6 +56,9 @@ function criarRNC_SalvarBasico(token, pv, op, clienteLivre, origem, fornecedor, 
   row[cols.cliente.index] = area;
   row[cols.fornecedor.index] = fornecedor;
   row[cols.descricaoNc.index] = motivo;
+  if (_temPossivelReincidencia_(sh, cols, fornecedor, motivo)) {
+    row[cols.reincidencia.index] = 'Possível reincidência';
+  }
   sh.appendRow(row);
 
   var newRow = sh.getLastRow();
@@ -114,6 +117,20 @@ function criarRNC_SalvarBasico(token, pv, op, clienteLivre, origem, fornecedor, 
     // garante retorno para o failureHandler no front-end
     throw new Error('Criar RNC: ' + String(e && e.message ? e.message : e));
   }
+}
+
+function _temPossivelReincidencia_(sh, cols, fornecedor, motivo) {
+  var lastRow = sh.getLastRow();
+  if (lastRow < 2) return false;
+
+  var vals = sh.getRange(2, 1, lastRow - 1, sh.getLastColumn()).getValues();
+  var fornecedorNormalizado = String(fornecedor || '').trim().toLowerCase();
+  var motivoNormalizado = String(motivo || '').trim().toLowerCase();
+
+  return vals.some(function(row) {
+    return String(row[cols.fornecedor.index] || '').trim().toLowerCase() === fornecedorNormalizado &&
+      String(row[cols.descricaoNc.index] || '').trim().toLowerCase() === motivoNormalizado;
+  });
 }
 
 function corrigirRNC_AtualizarAbertura(token, rncId, pv, op, responsavel, origem, fornecedor, descricao, motivo, disposicao, descCorrecao, anexos) {
