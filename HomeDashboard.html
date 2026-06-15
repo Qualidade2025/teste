@@ -738,7 +738,7 @@
           '</div>' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">Etapa</h3>' +
-            '<canvas id="statusPie" class="chart-canvas" height="220"></canvas>' +
+            '<canvas data-chart-id="statusPie" class="chart-canvas" height="220"></canvas>' +
           '</div>' +
         '</div>' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">' +
@@ -748,28 +748,28 @@
           '</div>' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">Aberturas x conclusões (últimos 6 meses)</h3>' +
-            '<canvas id="monthBars" class="chart-canvas" height="220"></canvas>' +
+            '<canvas data-chart-id="monthBars" class="chart-canvas" height="220"></canvas>' +
           '</div>' +
         '</div>' +
         '<div class="card" style="margin:12px 0 0 0">' +
           '<h3 style="margin-top:0;margin-bottom:8px">Pareto de motivos</h3>' +
-          '<canvas id="motivosPareto" class="chart-canvas" height="260"></canvas>' +
+          '<canvas data-chart-id="motivosPareto" class="chart-canvas" height="260"></canvas>' +
         '</div>';
     } else {
       chartsHtml = '' +
         '<div style="display:flex;gap:12px;flex-wrap:wrap">' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">Etapa</h3>' +
-            '<canvas id="statusPie" class="chart-canvas" height="220"></canvas>' +
+            '<canvas data-chart-id="statusPie" class="chart-canvas" height="220"></canvas>' +
           '</div>' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">Aberturas x conclusões (últimos 6 meses)</h3>' +
-            '<canvas id="monthBars" class="chart-canvas" height="220"></canvas>' +
+            '<canvas data-chart-id="monthBars" class="chart-canvas" height="220"></canvas>' +
           '</div>' +
         '</div>' +
         '<div class="card" style="margin:12px 0 0 0">' +
           '<h3 style="margin-top:0;margin-bottom:8px">Pareto de motivos</h3>' +
-          '<canvas id="motivosPareto" class="chart-canvas" height="260"></canvas>' +
+          '<canvas data-chart-id="motivosPareto" class="chart-canvas" height="260"></canvas>' +
         '</div>';
     }
 
@@ -801,8 +801,8 @@
 
     ensureChartJs(function(){
       var palette = getDashboardPalette();
-      var pieCtx = document.getElementById('statusPie');
-      var barCtx = document.getElementById('monthBars');
+      var pieCtx = root.querySelector('[data-chart-id="statusPie"]');
+      var barCtx = root.querySelector('[data-chart-id="monthBars"]');
 
       if (pieChart) pieChart.destroy();
       if (columnChart) columnChart.destroy();
@@ -847,7 +847,7 @@
         }
       });
 
-      var paretoCtx = document.getElementById('motivosPareto');
+      var paretoCtx = root.querySelector('[data-chart-id="motivosPareto"]');
 
       if (paretoCtx && paretoSeries){
         paretoChart = new Chart(paretoCtx, {
