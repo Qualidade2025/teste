@@ -78,6 +78,11 @@ function validarResposta(token, rncId) {
   }
   if (targetRow === -1) throw new Error('RNC não encontrada na aba Controle.');
 
+  var reincidencia = String(vals[targetRow-1][cols.reincidencia.index] || '').trim();
+  if (reincidencia === 'Possível reincidência') {
+    throw new Error('Esta RNC possui possível reincidência. Classifique a análise de reincidência antes de validar a resposta.');
+  }
+
   var motivoCancelamento = String(vals[targetRow-1][cols.motivoCancelamento.index] || '').trim();
   var statusFinal = motivoCancelamento ? 'Cancelada' : 'Resposta';
 
@@ -88,6 +93,43 @@ function validarResposta(token, rncId) {
   registrarDataHoraValidacao(sh, targetRow);
   _appendLog_(rncId, (sess && sess.area) ? sess.area : '', motivoCancelamento ? 'Resposta cancelada' : 'Resposta validada');
   return { ok:true, row: targetRow, rncId: rncId, etapa: statusFinal };
+}
+
+function classificarReincidencia(token, rncId, classificacao) {
+  var sess = _getSession_(token);
+  var areas = Array.isArray(sess && sess.areas) && sess.areas.length ? sess.areas : [sess && sess.area];
+  var isQualidade = areas.some(function(area) {
+    var normalized = String(area || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim();
+    return normalized === 'qualidade';
+  });
+  if (!isQualidade) throw new Error('Operação restrita à Qualidade.');
+
+  rncId = String(rncId || '').trim();
+  classificacao = String(classificacao || '').trim();
+  if (!rncId) throw new Error('RNC inválida.');
+  if (['Não', 'Provável', 'Sim'].indexOf(classificacao) === -1) {
+    throw new Error('Classificação de reincidência inválida.');
+  }
+
+  var sh = SpreadsheetApp.getActive().getSheetByName('Controle');
+  if (!sh) throw new Error('Aba "Controle" não encontrada.');
+  var vals = sh.getDataRange().getValues();
+  var cols = _getControleColumnIndices_(sh);
+  var targetRow = -1;
+  for (var r = 1; r < vals.length; r++) {
+    if (String(vals[r][cols.rnc.index] || '').trim() === rncId) {
+      targetRow = r + 1;
+      break;
+    }
+  }
+  if (targetRow === -1) throw new Error('RNC não encontrada na aba Controle.');
+  if (String(vals[targetRow - 1][cols.etapa.index] || '').trim() !== 'Validação resposta') {
+    throw new Error('A classificação de reincidência só pode ser alterada na etapa Validação resposta.');
+  }
+
+  sh.getRange(targetRow, cols.reincidencia.column).setValue(classificacao);
+  _appendLog_(rncId, (sess && sess.area) ? sess.area : '', 'Classificação reincidência', classificacao);
+  return { ok: true, rncId: rncId, classificacao: classificacao };
 }
 
 function retornarResposta(token, rncId, motivoDevolucao) {
