@@ -8,7 +8,10 @@
   <div class="split">
     <!-- Painel esquerdo: leitura -->
     <div class="panel">
-      <h2 style="margin-top:0">CONSTATAÇÃO</h2>
+      <div class="section-title-row">
+        <h2 style="margin-top:0">CONSTATAÇÃO</h2>
+        <button type="button" id="reincidenciaTagConstatacao" class="reincidencia-tag hidden"></button>
+      </div>
 
       <!-- Evidências de abertura -->
       <div style="margin:8px 0 12px">
@@ -40,7 +43,10 @@
       <!-- RESPOSTA (editável para área responsável) -->
       <div id="respForm" class="hidden">
                 <div id="retornoMsgResp" class="retorno-msg hidden"></div>
-        <h2 style="margin-top:0">RESPOSTA</h2>
+        <div class="section-title-row">
+          <h2 style="margin-top:0">RESPOSTA</h2>
+          <button type="button" id="reincidenciaTagResposta" class="reincidencia-tag hidden"></button>
+        </div>
 
         <!-- Evidências de resposta e de conclusão -->
         <div style="margin:8px 0 8px">
@@ -113,7 +119,10 @@
 
       <!-- Validação da RESPOSTA/CONCLUSÃO (Qualidade) -->
       <div id="respValResposta" class="hidden">
-        <h2 style="margin-top:0">Validação da resposta</h2>
+        <div class="section-title-row">
+          <h2 style="margin-top:0">RESPOSTA</h2>
+          <button type="button" id="reincidenciaTagValidacaoResposta" class="reincidencia-tag hidden"></button>
+        </div>
 
         <!-- Evidências (resposta e conclusão) -->
         <div id="val_respAnexosRespBox" style="margin:8px 0 8px">
@@ -165,6 +174,30 @@
       <div id="respPlaceholder" class="hidden">
         <h2 style="margin-top:0">Resposta</h2>
         <p class="muted" style="margin:0">—</p>
+      </div>
+    </div>
+  </div>
+
+  <div id="classificarReincidenciaModal" class="modal hidden" aria-hidden="true">
+    <div class="modal-backdrop"></div>
+    <div class="modal-dialog" role="dialog" aria-modal="true" aria-labelledby="classificarReincidenciaTitulo" style="max-width:520px">
+      <div class="modal-header">
+        <h3 id="classificarReincidenciaTitulo" style="margin:0">Classificar reincidência</h3>
+        <button class="btn-grey modal-close" id="btnFecharClassificarReincidencia" type="button">✕</button>
+      </div>
+      <div class="modal-body" style="min-height:0">
+        <label>Resultado da análise</label>
+        <select id="classificacaoReincidencia">
+          <option value="">— selecione —</option>
+          <option>Não</option>
+          <option>Provável</option>
+          <option>Sim</option>
+        </select>
+        <div id="classificarReincidenciaMsg" class="err" style="margin-top:8px"></div>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button class="btn-grey" id="btnCancelarClassificarReincidencia" type="button">Cancelar</button>
+        <button class="btn" id="btnSalvarClassificarReincidencia" type="button">Salvar</button>
       </div>
     </div>
   </div>
