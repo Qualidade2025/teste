@@ -51,7 +51,9 @@ function obterRNC(token, rncId, ano, mesNome) {
     var motivoNormalizado = String(obj.motivo).trim().toLowerCase();
     for (var p=1;p<vals.length;p++) {
       var rncProvavel = String(vals[p][cols.rnc.index] || '').trim();
+      var etapaNormalizada = String(vals[p][cols.etapa.index] || '').trim();
       if (rncProvavel && rncProvavel !== rncId &&
+          etapaNormalizada === 'Conclusão' &&
           String(vals[p][cols.fornecedor.index] || '').trim().toLowerCase() === fornecedorNormalizado &&
           String(vals[p][cols.descricaoNc.index] || '').trim().toLowerCase() === motivoNormalizado) {
         var dataProvavel = vals[p][cols.dataAbertura.index];
