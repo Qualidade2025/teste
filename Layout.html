@@ -181,8 +181,12 @@
   .toggle-btn{min-width:32px}
   .section-title-row{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
   .reincidencia-tag{display:inline-flex;align-items:center;margin:0 0 12px;padding:5px 9px;border:1px solid var(--warning);border-radius:999px;background:var(--surface-soft);color:var(--warning);font-weight:600}
+  .reincidencia-tag.hidden{display:none}
   button.reincidencia-tag:not(:disabled){cursor:pointer}
   button.reincidencia-tag:disabled{opacity:1;cursor:default}
+  .reincidencia-options{display:grid;gap:10px;border:0;padding:0;margin:0}
+  .reincidencia-option{display:flex;align-items:flex-start;gap:8px;margin:0;font-size:14px;line-height:1.3;cursor:pointer}
+  .reincidencia-option input[type="checkbox"]{flex:0 0 auto;width:auto;margin:2px 0 0}
 
   /* Dashboard resumo */
   #view-home{border:0;margin-bottom:0;padding-bottom:0;flex:1;margin-top:24px}
