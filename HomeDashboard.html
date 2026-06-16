@@ -744,7 +744,9 @@
         '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">RNCs pendentes por setor fornecedor</h3>' +
-            '<canvas id="fornecedorBars" class="chart-canvas" height="260"></canvas>' +
+            '<div class="fornecedor-chart-scroll">' +
+              '<canvas id="fornecedorBars" class="chart-canvas fornecedor-chart-canvas" height="260"></canvas>' +
+            '</div>' +
           '</div>' +
           '<div class="card" style="margin:0;flex:1 1 320px">' +
             '<h3 style="margin-top:0;margin-bottom:8px">Aberturas x conclusões (últimos 6 meses)</h3>' +
@@ -908,6 +910,9 @@
         var prazoCtx = document.getElementById('prazoPie');
 
         if (fornecedorCtx && fornecedorSeries){
+          var fornecedorChartHeight = Math.max(260, fornecedorSeries.labels.length * 32 + 48);
+          fornecedorCtx.style.height = fornecedorChartHeight + 'px';
+
           fornecedorChart = new Chart(fornecedorCtx, {
             type: 'bar',
             data: {
@@ -922,7 +927,21 @@
               indexAxis: 'y',
               responsive: true,
               maintainAspectRatio: false,
-              scales: { x: { beginAtZero: true, precision: 0, ticks: { color: palette.muted }, grid: { color: palette.grid } }, y: { ticks: { color: palette.muted }, grid: { color: palette.grid } } },
+              scales: {
+                x: {
+                  beginAtZero: true,
+                  precision: 0,
+                  ticks: { color: palette.muted },
+                  grid: { color: palette.grid }
+                },
+                y: {
+                  ticks: {
+                    color: palette.muted,
+                    autoSkip: false
+                  },
+                  grid: { color: palette.grid }
+                }
+              },
               plugins: { legend: { display: false } }
             }
           });
