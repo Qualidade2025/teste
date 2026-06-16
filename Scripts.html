@@ -3111,6 +3111,7 @@ function abrirVisualizar(rnc, ano, mes){
 function atualizarEtiquetaReincidenciaVisualizar(valor, temResposta, reincidenciasProvaveis){
   var tag = document.getElementById('visReincidenciaTag');
   if (!tag) return;
+  tag.disabled = true;
   valor = String(valor || '').trim();
   var texto = textoEtiquetaReincidencia(valor);
   var exibir = temResposta && !!texto && valor !== 'Não';
